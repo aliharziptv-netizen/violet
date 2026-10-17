@@ -265,7 +265,7 @@ class FallbackRepository implements ContentRepository {
   Future<List<Media>> featured() async {
     try {
       final r = await primary.featured();
-      return r.isEmpty ? backup.featured() : r;
+      return r.isEmpty ? await backup.featured() : r;
     } catch (_) {
       return backup.featured();
     }
@@ -275,7 +275,7 @@ class FallbackRepository implements ContentRepository {
   Future<List<Media>> trending() async {
     try {
       final r = await primary.trending();
-      return r.isEmpty ? backup.trending() : r;
+      return r.isEmpty ? await backup.trending() : r;
     } catch (_) {
       return backup.trending();
     }
