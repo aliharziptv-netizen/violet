@@ -12,8 +12,12 @@ jobs:
         with:
           channel: stable
       - run: flutter create --platforms=android --org com.violet --project-name violet_app .
+      - name: Allow internet in release builds
+        run: |
+          sed -i 's#<application#<uses-permission android:name="android.permission.INTERNET"/>\n    <application#' android/app/src/main/AndroidManifest.xml
+          sed -i 's#<application#<application android:usesCleartextTraffic="true"#' android/app/src/main/AndroidManifest.xml
       - run: flutter pub get
-      - run: flutter build apk --release
+      - run: flutter build apk --release --dart-define=TMDB_KEY=${{ secrets.TMDB_KEY }} --dart-define=API_BASE=${{ vars.API_BASE }}
       - uses: actions/upload-artifact@v4
         with:
           name: violet-apk

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../data.dart';
 import '../strings.dart';
 import '../theme.dart';
+import '../widgets.dart';
+import 'all_screen.dart';
+import 'detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   HomeScreen({super.key});
@@ -13,6 +16,20 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late final Future<List<Media>> featured = repo.featured();
   late final Future<List<Media>> trending = repo.trending();
+
+  void _open(Media m) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => DetailScreen(item: m)),
+    );
+  }
+
+  Future<void> _openAll() async {
+    final list = await trending;
+    if (!mounted) return;
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => AllScreen(title: tr('trending'), items: list),
+    ));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,11 +43,11 @@ class _HomeScreenState extends State<HomeScreen> {
               return const SizedBox(
                   height: 480, child: Center(child: CircularProgressIndicator()));
             }
-            return _Hero(items: snap.data!);
+            return _Hero(items: snap.data!, onOpen: _open);
           },
         ),
         const SizedBox(height: 20),
-        _SectionHeader(title: tr('trending')),
+        _SectionHeader(title: tr('trending'), onAll: _openAll),
         const SizedBox(height: 12),
         FutureBuilder<List<Media>>(
           future: trending,
@@ -47,7 +64,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: list.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (_, i) => _Poster(item: list[i]),
+                itemBuilder: (_, i) => GestureDetector(
+                  onTap: () => _open(list[i]),
+                  child: PosterCard(item: list[i], width: 150),
+                ),
               ),
             );
           },
@@ -60,7 +80,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _SectionHeader extends StatelessWidget {
   final String title;
-  const _SectionHeader({required this.title});
+  final VoidCallback onAll;
+  const _SectionHeader({required this.title, required this.onAll});
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +102,7 @@ class _SectionHeader extends StatelessWidget {
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
           const Spacer(),
           OutlinedButton.icon(
-            onPressed: () {},
+            onPressed: onAll,
             icon: const Icon(Icons.arrow_forward, size: 16),
             label: Text(tr('all')),
             style: OutlinedButton.styleFrom(
@@ -99,7 +120,8 @@ class _SectionHeader extends StatelessWidget {
 
 class _Hero extends StatefulWidget {
   final List<Media> items;
-  const _Hero({required this.items});
+  final void Function(Media) onOpen;
+  const _Hero({required this.items, required this.onOpen});
 
   @override
   State<_Hero> createState() => _HeroState();
@@ -125,7 +147,10 @@ class _HeroState extends State<_Hero> {
             controller: controller,
             itemCount: widget.items.length,
             onPageChanged: (i) => setState(() => page = i),
-            itemBuilder: (_, i) => _HeroSlide(item: widget.items[i]),
+            itemBuilder: (_, i) => _HeroSlide(
+              item: widget.items[i],
+              onOpen: () => widget.onOpen(widget.items[i]),
+            ),
           ),
           Positioned(
             left: 0,
@@ -156,7 +181,8 @@ class _HeroState extends State<_Hero> {
 
 class _HeroSlide extends StatelessWidget {
   final Media item;
-  const _HeroSlide({required this.item});
+  final VoidCallback onOpen;
+  const _HeroSlide({required this.item, required this.onOpen});
 
   @override
   Widget build(BuildContext context) {
@@ -174,6 +200,14 @@ class _HeroSlide extends StatelessWidget {
             child: Icon(Icons.movie_creation_outlined,
                 size: 130, color: Colors.white24),
           ),
+          if (item.image != null)
+            Positioned.fill(
+              child: Image.network(
+                item.image!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -212,9 +246,9 @@ class _HeroSlide extends StatelessWidget {
                     const SizedBox(width: 12),
                     Text(item.rating.toStringAsFixed(1),
                         style: const TextStyle(
-                            fontSize: 18, color: Colors.amber)),
+                            fontSize: 18, color: kPrimary)),
                     const SizedBox(width: 4),
-                    const Icon(Icons.star_border, color: Colors.amber),
+                    const Icon(Icons.star_border, color: kPrimary),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -222,7 +256,7 @@ class _HeroSlide extends StatelessWidget {
                   children: [
                     Expanded(
                       child: GestureDetector(
-                        onTap: () {},
+                        onTap: onOpen,
                         child: Container(
                           height: 52,
                           decoration: BoxDecoration(
@@ -271,74 +305,6 @@ class _HeroSlide extends StatelessWidget {
                 const SizedBox(height: 22),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Poster extends StatelessWidget {
-  final Media item;
-  const _Poster({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 150,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [item.c1, item.c2],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: 8,
-            right: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: kPrimary,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text('${item.year}',
-                  style: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w700)),
-            ),
-          ),
-          Positioned(
-            top: 8,
-            left: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(item.rating.toStringAsFixed(1),
-                      style: const TextStyle(fontSize: 12)),
-                  const SizedBox(width: 3),
-                  const Icon(Icons.star_border, size: 14, color: Colors.amber),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            left: 10,
-            right: 10,
-            bottom: 12,
-            child: Text(item.name,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.w800)),
           ),
         ],
       ),

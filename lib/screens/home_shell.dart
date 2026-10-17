@@ -29,8 +29,8 @@ class _HomeShellState extends State<HomeShell> {
     _NavItem(Icons.settings_outlined, 'settings'),
   ];
 
-  Widget _page(int i) {
-    if (i == 0) return HomeScreen();
+  Widget _page(int i, String lang) {
+    if (i == 0) return HomeScreen(key: ValueKey(lang));
     if (i == 5) return SettingsScreen();
     return _Placeholder(icon: items[i].icon, titleKey: items[i].key);
   }
@@ -41,7 +41,7 @@ class _HomeShellState extends State<HomeShell> {
       valueListenable: langNotifier,
       builder: (context, lang, _) {
         return Scaffold(
-          body: _page(index),
+          body: _page(index, lang),
           bottomNavigationBar: Container(
             padding: const EdgeInsets.fromLTRB(8, 8, 8, 14),
             decoration: const BoxDecoration(

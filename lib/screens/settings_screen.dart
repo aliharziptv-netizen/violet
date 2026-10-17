@@ -49,6 +49,12 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(height: 24),
+          const Text(
+            'This product uses the TMDB API but is not endorsed or certified by TMDB.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 11, color: Colors.white38),
+          ),
         ],
       ),
     );
